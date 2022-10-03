@@ -57,34 +57,34 @@ Cross-platform hybrid cryptography tool for shared key agreement (VKO), digital 
 ## Examples
 #### Asymmetric GOST2012 keypair generation:
 ```sh
-./edgetk -pkey keygen [-512] [-pwd "pass"]
+./engine -pkey keygen [-512] [-pwd "pass"]
 ```
 #### Parse keys info:
 ```sh
-./edgetk -pkey [text|modulus] [-pwd "pass"] -key private.pem
-./edgetk -pkey [text|modulus] -key public.pem
-./edgetk -pkey randomart -key public.pem
+./engine -pkey [text|modulus] [-pwd "pass"] -key private.pem
+./engine -pkey [text|modulus] -key public.pem
+./engine -pkey randomart -key public.pem
 ```
 #### Digital signature:
 ```sh
-./edgetk -pkey sign -key private.pem [-pwd "pass"] < file.ext > sign.txt
+./engine -pkey sign -key private.pem [-pwd "pass"] < file.ext > sign.txt
 sign=$(cat sign.txt|awk '{print $2}')
-./edgetk -pkey verify -key public.pem -signature $sign < file.ext
+./engine -pkey verify -key public.pem -signature $sign < file.ext
 echo $?
 ```
 #### Generate Certificate:
 ```sh
-./edgetk -pkey certgen -key private.pem [-pwd "pass"] [-cert "output.ext"]
+./engine -pkey certgen -key private.pem [-pwd "pass"] [-cert "output.ext"]
 ```
 #### Parse Certificate info:
 ```sh
-./edgetk -pkey [text|modulus] -cert certificate.pem
+./engine -pkey [text|modulus] -cert certificate.pem
 ```
 #### TLS Layer (TCP/IP):
 ```sh
-./edgetk -tcp ip > PubIP.txt
-./edgetk -tcp server -cert certificate.pem -key private.pem [-ipport "8081"]
-./edgetk -tcp client -cert certificate.pem -key private.pem [-ipport "127.0.0.1:8081"]
+./engine -tcp ip > PubIP.txt
+./engine -tcp server -cert certificate.pem -key private.pem [-ipport "8081"]
+./engine -tcp client -cert certificate.pem -key private.pem [-ipport "127.0.0.1:8081"]
 ```
 
 ## Contribute
