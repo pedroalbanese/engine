@@ -22,8 +22,8 @@ Cross-platform hybrid cryptography tool for shared key agreement (VKO), digital 
 ## Features
 * **Cryptographic Functions:**
 
-   * Digital Signature
-   * ECDH (Shared Key Agreement)
+   * Digital Signature (ECDSA-like)
+   * VKO (выработка ключа общего) Shared Key Agreement (a.k.a. ECDH)
    * TLS 1.2 (Transport Layer Security)
    
 * **Non-cryptographic Functions:**
