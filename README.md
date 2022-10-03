@@ -6,7 +6,7 @@
 [![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/pedroalbanese/engine)](https://golang.org)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/pedroalbanese/engine)](https://github.com/pedroalbanese/engine/releases)
 
-Multi-purpose cross-platform cryptography tool for shared key agreement (VKO), digital signature and TLS 1.2 for small or embedded systems. 
+Cross-platform hybrid cryptography tool for shared key agreement (VKO), digital signature and TLS 1.2 for small or embedded systems. 
 
 ## Command-line Security Suite
 
@@ -62,7 +62,8 @@ Multi-purpose cross-platform cryptography tool for shared key agreement (VKO), d
 #### Parse keys info:
 ```sh
 ./edgetk -pkey [text|modulus] [-pwd "pass"] -key private.pem
-./edgetk -pkey [text|modulus|randomart] -key public.pem
+./edgetk -pkey [text|modulus] -key public.pem
+./edgetk -pkey [randomart] -key public.pem
 ```
 #### Digital signature:
 ```sh
