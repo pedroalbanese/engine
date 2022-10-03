@@ -55,9 +55,9 @@ Multi-purpose cross-platform cryptography tool for shared key agreement (VKO), d
        Encrypted TCP/IP Transfer Protocol. [server|ip|client]</pre>
 
 ## Examples
-#### Asymmetric GOST2012 keypair generation (256-bit):
+#### Asymmetric GOST2012 keypair generation:
 ```sh
-./edgetk -pkey keygen -bits 256 [-pwd "pass"]
+./edgetk -pkey keygen [-512] [-pwd "pass"]
 ```
 #### Parse keys info:
 ```sh
