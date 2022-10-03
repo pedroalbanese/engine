@@ -53,7 +53,6 @@ var (
 	oidNSComment                    = []int{2, 16, 840, 1, 113730, 1, 13}
 	oidStepProvisioner              = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 37476, 9000, 64, 1}
 	oidStepCertificateAuthority     = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 37476, 9000, 64, 2}
-	//oidSignedCertificateTimestampList = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 11129, 2, 4, 2}
 )
 
 func handleConnection(c net.Conn) {
@@ -460,7 +459,7 @@ func main() {
 		var publicKey = pubKey.(*gost3410.PublicKey)
 		fmt.Printf("   X:%X\n", publicKey.X)
 		fmt.Printf("   Y:%X\n", publicKey.Y)
-		
+
 		var spki struct {
 			Algorithm        pkix.AlgorithmIdentifier
 			SubjectPublicKey asn1.BitString
@@ -475,7 +474,7 @@ func main() {
 	}
 
 	if (*pkey == "modulus" || *pkey == "text" || *pkey == "info") && *cert != "" {
-		var certPEM []byte 
+		var certPEM []byte
 		file, err := os.Open(*cert)
 		if err != nil {
 			log.Println(err)
@@ -496,7 +495,7 @@ func main() {
 			fmt.Printf("Public.Y=%X\n", certaPublicKey.Y)
 			os.Exit(0)
 		}
-		
+
 		var buf2 bytes.Buffer
 		buf2.Grow(4096)
 
@@ -510,11 +509,9 @@ func main() {
 		buf2.WriteString(fmt.Sprintf("%8sDNSNames      : %s \n", "", certa.DNSNames))
 		buf2.WriteString(fmt.Sprintf("%8sIsCA          : %v \n", "", certa.IsCA))
 
-		// Issuer information
 		buf2.WriteString(fmt.Sprintf("%8sIssuer\n            ", ""))
 		printName(certa.Issuer.Names, &buf2)
 
-		// Validity information
 		buf2.WriteString(fmt.Sprintf("%8sValidity\n", ""))
 		buf2.WriteString(fmt.Sprintf("%12sNot Before: %s\n", "", certa.NotBefore.Format("Jan 2 15:04:05 2006 MST")))
 		buf2.WriteString(fmt.Sprintf("%12sNot After : %s\n", "", certa.NotAfter.Format("Jan 2 15:04:05 2006 MST")))
@@ -644,17 +641,17 @@ func main() {
 		template := x509.Certificate{
 			SerialNumber: serialNumber,
 			Subject: pkix.Name{
-				CommonName: name,
-				SerialNumber: number,
-				Country: []string{country},
-				Province: []string{province},
-				Locality: []string{locality},
-				Organization: []string{organization},
+				CommonName:         name,
+				SerialNumber:       number,
+				Country:            []string{country},
+				Province:           []string{province},
+				Locality:           []string{locality},
+				Organization:       []string{organization},
 				OrganizationalUnit: []string{organizationunit},
-				StreetAddress: []string{street},
-				PostalCode: []string{postalcode},
+				StreetAddress:      []string{street},
+				PostalCode:         []string{postalcode},
 			},
-			EmailAddresses:              []string{email},
+			EmailAddresses: []string{email},
 
 			NotBefore: time.Now(),
 			NotAfter:  NotAfter,
@@ -691,7 +688,7 @@ func main() {
 	}
 
 	if *tcpip == "server" || *tcpip == "client" {
-		var certPEM []byte 
+		var certPEM []byte
 		var privPEM []byte
 		if *key == "" {
 			var priv interface{}
@@ -727,17 +724,14 @@ func main() {
 			template := x509.Certificate{
 				SerialNumber: serialNumber,
 				Subject: pkix.Name{
-					CommonName: "",
-	//				SerialNumber: "",
-					Country: []string{""},
-					Province: []string{""},
-					Locality: []string{""},
-					Organization: []string{""},
+					CommonName:         "",
+					Country:            []string{""},
+					Province:           []string{""},
+					Locality:           []string{""},
+					Organization:       []string{""},
 					OrganizationalUnit: []string{""},
-	//				StreetAddress: []string{""},
-	//				PostalCode: []string{""},
 				},
-				EmailAddresses:              []string{"pedroalbanese@hotmail.com"},
+				EmailAddresses: []string{"pedroalbanese@hotmail.com"},
 
 				NotBefore: time.Now(),
 				NotAfter:  NotAfter,
@@ -900,9 +894,9 @@ func main() {
 			var b bytes.Buffer
 			for _, cert := range conn.ConnectionState().PeerCertificates {
 				err := pem.Encode(&b, &pem.Block{
-					Type: "CERTIFICATE",
+					Type:  "CERTIFICATE",
 					Bytes: cert.Raw,
-			        })
+				})
 				if err != nil {
 					log.Println(err)
 				}
