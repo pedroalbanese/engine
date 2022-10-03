@@ -15,6 +15,10 @@ Multi-purpose cross-platform cryptography tool for shared key agreement (VKO), d
   - GOST R 34.11-2012 Стрибог (Streebog) hash function 256/512-bit (RFC 6986)
   - GOST R 34.12-2015 128-bit block cipher Кузнечик (Kuznechik) (RFC 7801)
 
+## Supported ParamSets
+  - GOST R 34.10-2012 256-bit: A, B, C, D
+  - GOST R 34.10-2012 512-bit: A, B
+
 ## Features
 * **Cryptographic Functions:**
 
@@ -24,7 +28,7 @@ Multi-purpose cross-platform cryptography tool for shared key agreement (VKO), d
    
 * **Non-cryptographic Functions:**
 
-   * RandomArt (as OpenSSH)
+   * RandomArt (OpenSSH-like)
 
 ## Usage
 <pre> -512
