@@ -63,7 +63,7 @@ Cross-platform hybrid cryptography tool for shared key agreement (VKO), digital 
 ```sh
 ./edgetk -pkey [text|modulus] [-pwd "pass"] -key private.pem
 ./edgetk -pkey [text|modulus] -key public.pem
-./edgetk -pkey [randomart] -key public.pem
+./edgetk -pkey randomart -key public.pem
 ```
 #### Digital signature:
 ```sh
