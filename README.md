@@ -1,4 +1,4 @@
-# GOST Engenhoca **(приспособление)**
+# GOST Engenhoca
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](https://github.com/pedroalbanese/engine/blob/master/LICENSE.md) 
 [![GoDoc](https://godoc.org/github.com/pedroalbanese/engine?status.png)](http://godoc.org/github.com/pedroalbanese/engine)
 [![GitHub downloads](https://img.shields.io/github/downloads/pedroalbanese/engine/total.svg?logo=github&logoColor=white)](https://github.com/pedroalbanese/engine/releases)
@@ -57,7 +57,7 @@ Cross-platform hybrid cryptography tool for shared key agreement (VKO), digital 
 ## Examples
 #### Asymmetric GOST2012 keypair generation:
 ```sh
-./engine -pkey keygen [-512] [-pwd "pass"]
+./engine -pkey keygen [-512] [-paramset B] [-pwd "pass"]
 ```
 #### Parse keys info:
 ```sh
@@ -100,4 +100,4 @@ echo $?
 
 This project is licensed under the ISC License.
 
-#### Copyright (c) 2020-2022 Pedro F. Albanese - ALBANESE Research Lab.
+#### Copyright (c) 2020-2023 Pedro F. Albanese - ALBANESE Research Lab.
