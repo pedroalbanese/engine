@@ -28,6 +28,7 @@ Cross-platform hybrid cryptography tool for shared key agreement (VKO), digital 
    
 * **Non-cryptographic Functions:**
 
+   * Privacy-Enhanced Mail (PEM format)
    * RandomArt (OpenSSH-like)
 
 ## Usage
