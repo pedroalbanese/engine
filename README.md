@@ -73,6 +73,10 @@ sign=$(cat sign.txt|awk '{print $2}')
 ./engine -pkey verify -key public.pem -signature $sign < file.ext
 echo $?
 ```
+#### VKO Shared key agreement:
+```sh
+./engine -pkey derive -key private.pem -public peerkey.pem
+```
 #### Generate Certificate:
 ```sh
 ./engine -pkey certgen -key private.pem [-pwd "pass"] [-cert "output.ext"]
