@@ -21,6 +21,7 @@ import (
 	"math/big"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -198,7 +199,7 @@ func main() {
 		}
 		var privKeyBytes []byte
 		if IsEncryptedPEMBlock(block) {
-			privKeyBytes, err = x509.DecryptPEMBlock(block, []byte(*pwd))
+			privKeyBytes, err = DecryptPEMBlock(block, []byte(*pwd))
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -265,7 +266,7 @@ func main() {
 		}
 		var privKeyBytes []byte
 		if IsEncryptedPEMBlock(block) {
-			privKeyBytes, err = x509.DecryptPEMBlock(block, []byte(*pwd))
+			privKeyBytes, err = DecryptPEMBlock(block, []byte(*pwd))
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -426,7 +427,7 @@ func main() {
 		}
 		var privKeyBytes []byte
 		if IsEncryptedPEMBlock(block) {
-			privKeyBytes, err = x509.DecryptPEMBlock(block, []byte(*pwd))
+			privKeyBytes, err = DecryptPEMBlock(block, []byte(*pwd))
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -560,7 +561,7 @@ func main() {
 
 		var privKeyBytes []byte
 		if IsEncryptedPEMBlock(block) {
-			privKeyBytes, err = x509.DecryptPEMBlock(block, []byte(*pwd))
+			privKeyBytes, err = DecryptPEMBlock(block, []byte(*pwd))
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -588,9 +589,6 @@ func main() {
 
 		consensus := externalip.DefaultConsensus(nil, nil)
 		ip, _ := consensus.ExternalIP()
-
-		Mins := 1200
-		NotAfter := time.Now().Local().Add(time.Minute * time.Duration(Mins))
 
 		scanner := bufio.NewScanner(os.Stdin)
 
@@ -637,6 +635,14 @@ func main() {
 		fmt.Print("AuthorityKeyId: ")
 		scanner.Scan()
 		authority, _ := hex.DecodeString(scanner.Text())
+
+		fmt.Print("Validity (in Days): ")
+		scanner.Scan()
+		validity := scanner.Text()
+
+		intVar, err := strconv.Atoi(validity)
+
+		NotAfter := time.Now().AddDate(0, 0, intVar)
 
 		template := x509.Certificate{
 			SerialNumber: serialNumber,
@@ -781,7 +787,7 @@ func main() {
 
 			var privKeyBytes []byte
 			if IsEncryptedPEMBlock(block) {
-				privKeyBytes, err = x509.DecryptPEMBlock(block, []byte(*pwd))
+				privKeyBytes, err = DecryptPEMBlock(block, []byte(*pwd))
 				if err != nil {
 					log.Println(err)
 				}
