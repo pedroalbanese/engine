@@ -61,7 +61,7 @@ Cross-platform hybrid cryptography toolkit for bulk encryption, recursive messag
  -512
        Key length: 256 or 512. (default 256)
  -cert string
-       Certificate name. (default "Certificate.pem")
+       Certificate path/name. (default "Certificate.pem")
  -check string
        Check hashsum file. ('-' for STDIN)
  -crypt string
