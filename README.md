@@ -10,8 +10,7 @@ Cross-platform hybrid cryptography toolkit for bulk encryption, recursive messag
 
 **GOST refers to a set of technical standards maintained by the Euro-Asian Council for Standardization, Metrology and Certification (EASC), a regional standards organization operating under the auspices of the Commonwealth of Independent States (CIS).**
 
-## Command-line Security Suite
-
+#### GOST is GOvernment STandard of Russian Federation (and Soviet Union):
   - GOST R 34.10-2012 public key signature function (RFC 7091)
   - VKO GOST R 34.10-2012 key agreement function (RFC 7836)
   - GOST R 34.11-2012 Стрибог (Streebog) hash function 256/512-bit (RFC 6986)
