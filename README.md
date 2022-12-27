@@ -1,5 +1,4 @@
 # GOST Engenhoca
-### GOST Toolkit Lite
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](https://github.com/pedroalbanese/engine/blob/master/LICENSE.md) 
 [![GoDoc](https://godoc.org/github.com/pedroalbanese/engine?status.png)](http://godoc.org/github.com/pedroalbanese/engine)
 [![GitHub downloads](https://img.shields.io/github/downloads/pedroalbanese/engine/total.svg?logo=github&logoColor=white)](https://github.com/pedroalbanese/engine/releases)
@@ -7,6 +6,7 @@
 [![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/pedroalbanese/engine)](https://golang.org)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/pedroalbanese/engine)](https://github.com/pedroalbanese/engine/releases)
 
+### GOST Toolkit Lite
 Cross-platform hybrid cryptography toolkit for bulk encryption, recursive message digest, key derivation function (KDF), message authentication code (MAC), shared key agreement (VKO), digital signature and TLS 1.2 for small or embedded systems. 
 
 **GOST refers to a set of technical standards maintained by the Euro-Asian Council for Standardization, Metrology and Certification (EASC), a regional standards organization operating under the auspices of the Commonwealth of Independent States (CIS).**
