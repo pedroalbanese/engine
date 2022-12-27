@@ -6,7 +6,7 @@
 [![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/pedroalbanese/engine)](https://golang.org)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/pedroalbanese/engine)](https://github.com/pedroalbanese/engine/releases)
 
-### GOST Toolkit Lite
+### GOST Toolkit Lite (TC26 Compliant)
 Cross-platform hybrid cryptography toolkit for bulk encryption, recursive message digest, key derivation function (KDF), message authentication code (MAC), shared key agreement (VKO), digital signature and TLS 1.2 for small or embedded systems. 
 
 **GOST refers to a set of technical standards maintained by the Euro-Asian Council for Standardization, Metrology and Certification (EASC), a regional standards organization operating under the auspices of the Commonwealth of Independent States (CIS).**
