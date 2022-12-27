@@ -19,9 +19,24 @@ Cross-platform hybrid cryptography toolkit for bulk encryption, recursive messag
   - GOST R 34.12-2015 64-bit block cipher Магма (Magma) (RFC 8891)
   - MGM AEAD mode for 64 and 128 bit ciphers (RFC 9058)
 
-### Supported ParamSets:
-  - GOST R 34.10-2012 256-bit: A, B, C, D
-  - GOST R 34.10-2012 512-bit: A, B
+#### Symmetric:
+- Block Ciphers:
+   - GOST R 34.12-2015 Magma (default)
+   - GOST R 34.12-2015 Kuznechik (Grasshopper)
+
+- Mode of Operation:
+   - MGM: Multilinear Galois Mode (AEAD)
+
+- Message Digest Algorithm:
+   - GOST R 34.11-2012 Streebog 256/512-bit (default) 
+   
+#### Asymmetric:
+- Public key Algorithm:
+   - GOST R 34.10-2012 256/512-bit (default) 
+
+- Supported ParamSets:
+   - GOST R 34.10-2012 256-bit: A, B, C, D
+   - GOST R 34.10-2012 512-bit: A, B
 
 ## Features
 * **Cryptographic Functions:**
