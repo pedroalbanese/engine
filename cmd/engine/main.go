@@ -265,6 +265,9 @@ func main() {
 
 	if *mac == "cmac" {
 		var c cipher.Block
+		if len([]byte(*key)) != 32 {
+			log.Fatal("CMAC secret must have 128-bit.")
+		}
 		if *block == false {
 			c = gost341264.NewCipher([]byte(*key))
 		} else {
