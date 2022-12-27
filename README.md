@@ -12,9 +12,10 @@ Cross-platform hybrid cryptography toolkit for bulk encryption, recursive messag
 
 ## Roll of Algorithms
 #### GOST is GOvernment STandard of Russian Federation (and Soviet Union):
+  - TLS 1.2 Transport Layer Security (RFC 5246)
+  - GOST R 34.11-2012 Стрибог (Streebog) hash function 256/512-bit (RFC 6986)
   - GOST R 34.10-2012 public key signature function (RFC 7091)
   - VKO GOST R 34.10-2012 key agreement function (RFC 7836)
-  - GOST R 34.11-2012 Стрибог (Streebog) hash function 256/512-bit (RFC 6986)
   - GOST R 34.12-2015 128-bit block cipher Кузнечик (Kuznechik) (RFC 7801)
   - GOST R 34.12-2015 64-bit block cipher Магма (Magma) (RFC 8891)
   - MGM AEAD mode for 64 and 128 bit ciphers (RFC 9058)
