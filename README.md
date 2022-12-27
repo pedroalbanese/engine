@@ -172,9 +172,9 @@ echo $?
 ```sh
 ./engine -hkdf 256 [-512] -key "IKM" -info "AD" -salt "salt"
 ```
-#### PBKDF2 (password-based key derivation function 2):
+#### PBKDF2 (password-based key derivation function):
 ```sh
-./engine -pbkdf2 [-512] -key "pass" -iter 10000 -salt "salt"
+./engine -pbkdf2 [-512] -key "pass" -iter 10000 -salt "salt" -crypt enc < plaintext.ext > ciphertext.ext
 ```
 #### Bin to Hex/Hex to Bin:
 ```sh
