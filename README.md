@@ -100,8 +100,7 @@ Cross-platform hybrid cryptography toolkit for bulk encryption, recursive messag
 #### Parse keys info:
 ```sh
 ./engine -pkey [text|modulus] [-pwd "pass"] -key private.pem
-./engine -pkey [text|modulus] -key public.pem
-./engine -pkey randomart -key public.pem
+./engine -pkey [text|modulus|randomart] -key public.pem
 ```
 #### Digital signature:
 ```sh
