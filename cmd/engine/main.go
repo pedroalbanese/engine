@@ -603,7 +603,12 @@ func main() {
 		}
 		publicKey := publicInterface.(*gost3410.PublicKey)
 
-		shared, err := privateKey.KEK2001(publicKey, big.NewInt(1))
+		var shared []byte
+		if *bit {
+			shared, err = privateKey.KEK2012512(publicKey, big.NewInt(1))
+		} else {
+			shared, err = privateKey.KEK2012256(publicKey, big.NewInt(1))
+		}
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -1068,118 +1073,47 @@ func main() {
 	if *tcpip == "server" || *tcpip == "client" {
 		var certPEM []byte
 		var privPEM []byte
-		if *key == "" {
-			var priv interface{}
-			var err error
-			gost341012256PrivRaw := make([]byte, 32)
-			if _, err = io.ReadFull(rand.Reader, gost341012256PrivRaw); err != nil {
-				log.Fatalf("Failed to read random for GOST private key: %s", err)
-			}
-			priv, err = gost3410.NewPrivateKey(
-				gost3410.CurveIdtc26gost341012256paramSetA(),
-				gost341012256PrivRaw,
-			)
-			if err != nil {
-				log.Fatalf("Failed to create GOST private key: %s", err)
-			}
-			private := priv.(*gost3410.PrivateKey)
-			public := private.Public()
 
-			keyUsage := x509.KeyUsageDigitalSignature
-
-			serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
-			serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
-			if err != nil {
-				log.Fatalf("Failed to generate serial number: %v", err)
-			}
-
-			consensus := externalip.DefaultConsensus(nil, nil)
-			ip, _ := consensus.ExternalIP()
-
-			Mins := 12
-			NotAfter := time.Now().Local().Add(time.Minute * time.Duration(Mins))
-
-			template := x509.Certificate{
-				SerialNumber: serialNumber,
-				Subject: pkix.Name{
-					CommonName:         "",
-					Country:            []string{""},
-					Province:           []string{""},
-					Locality:           []string{""},
-					Organization:       []string{""},
-					OrganizationalUnit: []string{""},
-				},
-				EmailAddresses: []string{"pedroalbanese@hotmail.com"},
-
-				NotBefore: time.Now(),
-				NotAfter:  NotAfter,
-
-				KeyUsage:              keyUsage,
-				ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-				BasicConstraintsValid: true,
-				IsCA:                  true,
-
-				PermittedDNSDomainsCritical: true,
-				DNSNames:                    []string{ip.String()},
-				IPAddresses:                 []net.IP{net.IPv4(127, 0, 0, 1).To4(), net.ParseIP("2001:4860:0:2001::68")},
-			}
-
-			template.IsCA = true
-			template.KeyUsage |= x509.KeyUsageCertSign
-
-			derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, public, &gost3410.PrivateKeyReverseDigest{Prv: private})
-			if err != nil {
-				log.Fatalf("Failed to create certificate: %v", err)
-			}
-
-			certPEM = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
-			privBytes, err := x509.MarshalPKCS8PrivateKey(priv)
-			if err != nil {
-				log.Fatalf("Unable to marshal private key: %v", err)
-			}
-			privPEM = pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: privBytes})
-		} else {
-			file, err := os.Open(*key)
-			if err != nil {
-				log.Println(err)
-			}
-			info, err := file.Stat()
-			if err != nil {
-				log.Println(err)
-			}
-			buf := make([]byte, info.Size())
-			file.Read(buf)
-
-			var block *pem.Block
-			block, _ = pem.Decode(buf)
-
-			if block == nil {
-				errors.New("no valid private key found")
-			}
-
-			var privKeyBytes []byte
-			if IsEncryptedPEMBlock(block) {
-				privKeyBytes, err = DecryptPEMBlock(block, []byte(*pwd))
-				if err != nil {
-					log.Println(err)
-				}
-				privPEM = pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: privKeyBytes})
-			} else {
-				privPEM = buf
-			}
-
-			file, err = os.Open(*cert)
-			if err != nil {
-				log.Println(err)
-			}
-			info, err = file.Stat()
-			if err != nil {
-				log.Println(err)
-			}
-			buf = make([]byte, info.Size())
-			file.Read(buf)
-			certPEM = buf
+		file, err := os.Open(*key)
+		if err != nil {
+			log.Println(err)
 		}
+		info, err := file.Stat()
+		if err != nil {
+			log.Println(err)
+		}
+		buf := make([]byte, info.Size())
+		file.Read(buf)
+
+		var block *pem.Block
+		block, _ = pem.Decode(buf)
+
+		if block == nil {
+			errors.New("no valid private key found")
+		}
+
+		var privKeyBytes []byte
+		if IsEncryptedPEMBlock(block) {
+			privKeyBytes, err = DecryptPEMBlock(block, []byte(*pwd))
+			if err != nil {
+				log.Println(err)
+			}
+			privPEM = pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: privKeyBytes})
+		} else {
+			privPEM = buf
+		}
+
+		file, err = os.Open(*cert)
+		if err != nil {
+			log.Println(err)
+		}
+		info, err = file.Stat()
+		if err != nil {
+			log.Println(err)
+		}
+		buf = make([]byte, info.Size())
+		file.Read(buf)
+		certPEM = buf
 
 		if *tcpip == "server" {
 			cert, err := tls.X509KeyPair(certPEM, privPEM)
