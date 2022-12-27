@@ -3,6 +3,8 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"crypto/cipher"
+	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha1"
 	"crypto/tls"
@@ -14,6 +16,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"golang.org/x/crypto/hkdf"
+	"golang.org/x/crypto/pbkdf2"
 	"hash"
 	"io"
 	"io/ioutil"
@@ -21,30 +25,51 @@ import (
 	"math/big"
 	"net"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
 	"crypto/go.cypherpunks.ru/gogost/v5/gost3410"
+	"github.com/pedroalbanese/cmac"
 	"github.com/pedroalbanese/go-external-ip"
 	"github.com/pedroalbanese/gogost/gost34112012256"
 	"github.com/pedroalbanese/gogost/gost34112012512"
+	"github.com/pedroalbanese/gogost/gost3412128"
+	"github.com/pedroalbanese/gogost/gost341264"
+	"github.com/pedroalbanese/gogost/mgm"
 	"github.com/pedroalbanese/randomart"
 )
 
 var (
 	bit       = flag.Bool("512", false, "Key length: 256 or 512. (default 256)")
+	block     = flag.Bool("128", false, "Block size: 64 or 128. (for symmetric encryption only) (default 64)")
 	cert      = flag.String("cert", "Certificate.pem", "Certificate name.")
+	check     = flag.String("check", "", "Check hashsum file. ('-' for STDIN)")
+	crypt     = flag.String("crypt", "", "Encrypt/Decrypt with symmetric ciphers.")
+	encode    = flag.String("hex", "", "Encode binary string to hex format and vice-versa.")
+	info      = flag.String("info", "", "Associated data, additional info. (for HKDF and AEAD encryption)")
 	iport     = flag.String("ipport", "", "Local Port/remote's side Public IP:Port.")
+	iter      = flag.Int("iter", 1, "Iterations. (for PBKDF2 command)")
+	kdf       = flag.Int("hkdf", 0, "HMAC-based key derivation function with a given output bit length.")
 	key       = flag.String("key", "", "Private/Public key, depending on operation.")
+	mac       = flag.String("mac", "", "Compute hash-based/cipher-based message authentication code.")
 	paramset  = flag.String("paramset", "A", "Elliptic curve ParamSet: A, B, C, D.")
+	pbkdf     = flag.Bool("pbkdf2", false, "Password-based key derivation function 2.")
 	pkey      = flag.String("pkey", "", "Generate keypair, Generate certificate. [keygen|certgen]")
 	priv      = flag.String("private", "Private.pem", "Private key path. (for keypair generation)")
 	pub       = flag.String("public", "Public.pem", "Public key path. (for keypair generation)")
 	pwd       = flag.String("pwd", "", "Password. (for Private key PEM encryption)")
+	random    = flag.Int("rand", 0, "Generate random cryptographic key with a given output bit length.")
+	recursive = flag.Bool("recursive", false, "Process directories recursively. (for DIGEST command only)")
+	salt      = flag.String("salt", "", "Salt. (for PBKDF2 and HKDF commands)")
 	signature = flag.String("signature", "", "Input signature. (verification only)")
+	target    = flag.String("digest", "", "File/Wildcard to generate hashsum list. ('-' for STDIN)")
 	tcpip     = flag.String("tcp", "", "Encrypted TCP/IP Transfer Protocol. [server|ip|client]")
+	version   = flag.Bool("version", false, "Print version information.")
 )
+
+const Version = "2.0.0-Alpha"
 
 var (
 	oidEmailAddress                 = []int{1, 2, 840, 113549, 1, 9, 1}
@@ -67,6 +92,350 @@ func main() {
 		fmt.Fprintln(os.Stderr, "Usage of", os.Args[0]+":")
 		flag.PrintDefaults()
 		os.Exit(1)
+	}
+
+	if *version {
+		fmt.Println(Version)
+		return
+	}
+
+	if *random != 0 {
+		var key []byte
+		var err error
+		key = make([]byte, *random/8)
+		_, err = io.ReadFull(rand.Reader, key)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(hex.EncodeToString(key))
+		os.Exit(0)
+	}
+
+	if *encode == "enc" || *encode == "encode" {
+		b, err := ioutil.ReadAll(os.Stdin)
+		if len(b) == 0 {
+			os.Exit(0)
+		}
+		if err != nil {
+			log.Fatal(err)
+		}
+		o := make([]byte, hex.EncodedLen(len(b)))
+		hex.Encode(o, b)
+		os.Stdout.Write(o)
+		os.Exit(0)
+	}
+
+	if *encode == "dec" || *encode == "decode" {
+		var err error
+		buf := bytes.NewBuffer(nil)
+		data := os.Stdin
+		io.Copy(buf, data)
+		b := strings.TrimSuffix(string(buf.Bytes()), "\r\n")
+		b = strings.TrimSuffix(string(b), "\n")
+		if len(b) == 0 {
+			os.Exit(0)
+		}
+		if len(b) < 2 {
+			os.Exit(0)
+		}
+		if (len(b)%2 != 0) || (err != nil) {
+			log.Fatal(err)
+		}
+		o := make([]byte, hex.DecodedLen(len(b)))
+		_, err = hex.Decode(o, []byte(b))
+		if err != nil {
+			log.Fatal(err)
+		}
+		os.Stdout.Write(o)
+		os.Exit(0)
+	}
+
+	if *encode == "dump" {
+		buf := bytes.NewBuffer(nil)
+		data := os.Stdin
+		io.Copy(buf, data)
+		b := strings.TrimSuffix(string(buf.Bytes()), "\r\n")
+		b = strings.TrimSuffix(string(b), "\n")
+		dump := hex.Dump([]byte(b))
+		os.Stdout.Write([]byte(dump))
+		os.Exit(0)
+	}
+
+	if *crypt == "enc" || *crypt == "dec" {
+		var keyHex string
+		var keyRaw []byte
+		if *pbkdf == true && *bit == false {
+			keyRaw = pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 32, gost34112012256.New)
+			keyHex = hex.EncodeToString(keyRaw)
+		} else if *pbkdf == true && *bit == true {
+			keyRaw = pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 32, gost34112012512.New)
+			keyHex = hex.EncodeToString(keyRaw)
+		} else {
+			keyHex = *key
+		}
+		var key []byte
+		var err error
+		if keyHex == "" {
+			key = make([]byte, 32)
+			_, err = io.ReadFull(rand.Reader, key)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Fprintln(os.Stderr, "Key=", hex.EncodeToString(key))
+		} else {
+			key, err = hex.DecodeString(keyHex)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if len(key) != 32 {
+				log.Fatal(err)
+			}
+		}
+
+		buf := bytes.NewBuffer(nil)
+		data := os.Stdin
+		io.Copy(buf, data)
+		msg := buf.Bytes()
+		var c cipher.Block
+		var n int
+		if *block == true {
+			c = gost3412128.NewCipher(key)
+			n = 16
+		} else if *block == false {
+			c = gost341264.NewCipher(key)
+			n = 8
+		}
+		aead, _ := mgm.NewMGM(c, n)
+
+		if *crypt == "enc" {
+			nonce := make([]byte, aead.NonceSize(), aead.NonceSize()+len(msg)+aead.Overhead())
+
+			if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+				log.Fatal(err)
+			}
+
+			nonce[0] &= 0x7F
+
+			out := aead.Seal(nonce, nonce, msg, []byte(*info))
+			fmt.Printf("%s", out)
+
+			os.Exit(0)
+		}
+
+		if *crypt == "dec" {
+			nonce, msg := msg[:aead.NonceSize()], msg[aead.NonceSize():]
+
+			out, err := aead.Open(nil, nonce, msg, []byte(*info))
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Printf("%s", out)
+
+			os.Exit(0)
+		}
+	}
+
+	if *mac == "hmac" {
+		var h hash.Hash
+		key := []byte(*key)
+		if *bit == false {
+			h = hmac.New(gost34112012256.New, key)
+		} else {
+			h = hmac.New(gost34112012512.New, key)
+		}
+		if _, err := io.Copy(h, os.Stdin); err != nil {
+			log.Fatal(err)
+		}
+		var verify bool
+		if *signature != "" {
+			mac := hex.EncodeToString(h.Sum(nil))
+			if mac != *signature {
+				verify = false
+				fmt.Println(verify)
+				os.Exit(1)
+			} else {
+				verify = true
+				fmt.Println(verify)
+				os.Exit(0)
+			}
+		}
+		fmt.Println(hex.EncodeToString(h.Sum(nil)))
+		os.Exit(0)
+	}
+
+	if *mac == "cmac" {
+		var c cipher.Block
+		if *block == false {
+			c = gost341264.NewCipher([]byte(*key))
+		} else {
+			c = gost3412128.NewCipher([]byte(*key))
+		}
+		h, err := cmac.New(c)
+		if err != nil {
+			log.Fatal(err)
+		}
+		io.Copy(h, os.Stdin)
+		var verify bool
+		if *signature != "" {
+			mac := hex.EncodeToString(h.Sum(nil))
+			if mac != *signature {
+				verify = false
+				fmt.Println(verify)
+				os.Exit(1)
+			} else {
+				verify = true
+				fmt.Println(verify)
+				os.Exit(0)
+			}
+		}
+		fmt.Println(hex.EncodeToString(h.Sum(nil)))
+		os.Exit(0)
+	}
+
+	if *kdf > 0 {
+		keyRaw, err := Hkdf([]byte(*key), []byte(*salt), []byte(*info))
+		if err != nil {
+			log.Fatal(err)
+		}
+		keySlice := string(keyRaw[:])
+		fmt.Println(hex.EncodeToString([]byte(keySlice)[:*kdf/8]))
+		os.Exit(0)
+	}
+
+	if *target == "-" {
+		var h hash.Hash
+		if *bit == false {
+			h = gost34112012256.New()
+		} else {
+			h = gost34112012512.New()
+		}
+		io.Copy(h, os.Stdin)
+		fmt.Println(hex.EncodeToString(h.Sum(nil)))
+		os.Exit(0)
+	}
+
+	if *target != "" && *recursive == false {
+		files, err := filepath.Glob(*target)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		for _, match := range files {
+			var h hash.Hash
+			if *bit == false {
+				h = gost34112012256.New()
+			} else {
+				h = gost34112012512.New()
+			}
+			f, err := os.Open(match)
+			if err != nil {
+				log.Fatal(err)
+			}
+			file, _ := os.Stat(match)
+			if file.IsDir() {
+			} else {
+				if _, err := io.Copy(h, f); err != nil {
+					log.Fatal(err)
+				}
+				fmt.Println(hex.EncodeToString(h.Sum(nil)), "*"+f.Name())
+			}
+		}
+		os.Exit(0)
+	}
+
+	if *target != "" && *recursive == true {
+		err := filepath.Walk(filepath.Dir(*target),
+			func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+				file, _ := os.Stat(path)
+				if file.IsDir() {
+				} else {
+					filename := filepath.Base(path)
+					pattern := filepath.Base(*target)
+					matched, err := filepath.Match(pattern, filename)
+					if err != nil {
+						fmt.Println(err)
+					}
+					if matched {
+						var h hash.Hash
+						if *bit == false {
+							h = gost34112012256.New()
+						} else {
+							h = gost34112012512.New()
+						}
+						f, err := os.Open(path)
+						if err != nil {
+							log.Fatal(err)
+						}
+						if _, err := io.Copy(h, f); err != nil {
+							log.Fatal(err)
+						}
+						fmt.Println(hex.EncodeToString(h.Sum(nil)), "*"+f.Name())
+					}
+				}
+				return nil
+			})
+		if err != nil {
+			log.Println(err)
+		}
+		os.Exit(0)
+	}
+
+	if *check != "" {
+		var file io.Reader
+		var err error
+		if *check == "-" {
+			file = os.Stdin
+		} else {
+			file, err = os.Open(*check)
+			if err != nil {
+				log.Fatalf("failed opening file: %s", err)
+			}
+		}
+		scanner := bufio.NewScanner(file)
+		scanner.Split(bufio.ScanLines)
+		var txtlines []string
+
+		for scanner.Scan() {
+			txtlines = append(txtlines, scanner.Text())
+		}
+
+		var exit int
+		for _, eachline := range txtlines {
+			lines := strings.Split(string(eachline), " *")
+			if strings.Contains(string(eachline), " *") {
+
+				var h hash.Hash
+				if *bit == false {
+					h = gost34112012256.New()
+				} else {
+					h = gost34112012512.New()
+				}
+
+				_, err := os.Stat(lines[1])
+				if err == nil {
+					f, err := os.Open(lines[1])
+					if err != nil {
+						log.Fatal(err)
+					}
+					io.Copy(h, f)
+					f.Close()
+
+					if hex.EncodeToString(h.Sum(nil)) == lines[0] {
+						fmt.Println(lines[1]+"\t", "OK")
+					} else {
+						fmt.Println(lines[1]+"\t", "FAILED")
+						exit = 1
+					}
+				} else {
+					fmt.Println(lines[1]+"\t", "Not found!")
+					exit = 1
+				}
+			}
+		}
+		os.Exit(exit)
 	}
 
 	if *pkey == "keygen" && *pwd == "" {
@@ -1037,6 +1406,21 @@ func split(s string, size int) []string {
 
 	}
 	return ss
+}
+
+func Hkdf(master, salt, info []byte) ([128]byte, error) {
+	var h func() hash.Hash
+	if *bit == false {
+		h = gost34112012256.New
+	} else {
+		h = gost34112012512.New
+	}
+	hkdf := hkdf.New(h, master, salt, info)
+	key := make([]byte, 32)
+	_, err := io.ReadFull(hkdf, key)
+	var result [128]byte
+	copy(result[:], key)
+	return result, err
 }
 
 func zeroByteSlice() []byte {
