@@ -11,5 +11,6 @@ require (
 
 require (
 	github.com/pedroalbanese/anubis v0.0.0-gama
-	golang.org/x/crypto v0.0.0-20220924013350-4ba4fb4dd9e7 // indirect
+	github.com/pedroalbanese/cmac v0.0.0-20210429130952-a58975ec8f4c
+	golang.org/x/crypto v0.0.0-20220924013350-4ba4fb4dd9e7
 )
