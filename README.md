@@ -25,7 +25,7 @@ Cross-platform hybrid cryptography toolkit for bulk encryption, recursive messag
    - GOST R 34.12-2015 Magma (default)
    - GOST R 34.12-2015 Kuznechik (Grasshopper)
 
-- **Mode of Operation:**
+- **Modes of Operation:**
    - MGM: Multilinear Galois Mode (AEAD)
    - CFB: Cipher Feedback Mode
    - CTR: Counter Mode
