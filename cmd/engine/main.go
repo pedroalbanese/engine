@@ -71,7 +71,7 @@ var (
 	version   = flag.Bool("version", false, "Print version information.")
 )
 
-const Version = "2.0.0-Alpha"
+const Version = "1.0.1-Alpha"
 
 var (
 	oidEmailAddress                 = []int{1, 2, 840, 113549, 1, 9, 1}
