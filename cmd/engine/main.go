@@ -44,7 +44,7 @@ import (
 var (
 	bit       = flag.Bool("512", false, "Key length: 256 or 512. (default 256)")
 	block     = flag.Bool("128", false, "Block size: 64 or 128. (for symmetric encryption only) (default 64)")
-	cert      = flag.String("cert", "Certificate.pem", "Certificate name.")
+	cert      = flag.String("cert", "Certificate.pem", "Certificate path/name.")
 	check     = flag.String("check", "", "Check hashsum file. ('-' for STDIN)")
 	crypt     = flag.String("crypt", "", "Encrypt/Decrypt with symmetric ciphers.")
 	encode    = flag.String("hex", "", "Encode binary string to hex format and vice-versa.")
@@ -54,6 +54,7 @@ var (
 	kdf       = flag.Int("hkdf", 0, "HMAC-based key derivation function with a given output bit length.")
 	key       = flag.String("key", "", "Private/Public key, depending on operation.")
 	mac       = flag.String("mac", "", "Compute hash-based/cipher-based message authentication code.")
+	mode      = flag.String("mode", "MGM", "Mode of operation: MGM, CFB, CTR or OFB.")
 	paramset  = flag.String("paramset", "A", "Elliptic curve ParamSet: A, B, C, D.")
 	pbkdf     = flag.Bool("pbkdf2", false, "Password-based key derivation function 2.")
 	pkey      = flag.String("pkey", "", "Generate keypair, Generate certificate. [keygen|certgen]")
@@ -66,6 +67,7 @@ var (
 	signature = flag.String("signature", "", "Input signature. (verification only)")
 	target    = flag.String("digest", "", "File/Wildcard to generate hashsum list. ('-' for STDIN)")
 	tcpip     = flag.String("tcp", "", "Encrypted TCP/IP Transfer Protocol. [server|ip|client]")
+	vector    = flag.String("iv", "", "Initialization vector. (for non-AEAD symmetric encryption)")
 	version   = flag.Bool("version", false, "Print version information.")
 )
 
@@ -161,7 +163,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *crypt == "enc" || *crypt == "dec" {
+	if (*crypt == "enc" || *crypt == "dec") && strings.ToUpper(*mode) == "MGM" {
 		var keyHex string
 		var keyRaw []byte
 		if *pbkdf == true && *bit == false {
@@ -233,6 +235,82 @@ func main() {
 
 			os.Exit(0)
 		}
+	}
+
+	if (*crypt == "enc" || *crypt == "dec") && (strings.ToUpper(*mode) == "OFB" || strings.ToUpper(*mode) == "CTR" || strings.ToUpper(*mode) == "CFB8" || strings.ToUpper(*mode) == "CFB") {
+		var keyHex string
+		var keyRaw []byte
+		if *pbkdf == true && *bit == false {
+			keyRaw = pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 32, gost34112012256.New)
+			keyHex = hex.EncodeToString(keyRaw)
+		} else if *pbkdf == true && *bit == true {
+			keyRaw = pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 32, gost34112012512.New)
+			keyHex = hex.EncodeToString(keyRaw)
+		} else {
+			keyHex = *key
+		}
+		var key []byte
+		var err error
+		if keyHex == "" {
+			key = make([]byte, gost3412128.KeySize)
+			_, err = io.ReadFull(rand.Reader, key)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Fprintln(os.Stderr, "Key=", hex.EncodeToString(key))
+		} else {
+			key, err = hex.DecodeString(keyHex)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if len(key) != gost3412128.KeySize {
+				log.Fatal(err)
+			}
+		}
+		var iv []byte
+		if *vector != "" {
+			iv, _ = hex.DecodeString(*vector)
+		} else {
+			if *block {
+				iv = make([]byte, gost3412128.BlockSize)
+			} else {
+				iv = make([]byte, gost341264.BlockSize)
+			}
+			fmt.Fprintf(os.Stderr, "IV= %x\n", iv)
+		}
+		var ciph cipher.Block
+		if *block {
+			ciph = gost3412128.NewCipher(key)
+		} else {
+			ciph = gost341264.NewCipher(key)
+		}
+		var stream cipher.Stream
+		if strings.ToUpper(*mode) == "CTR" {
+			stream = cipher.NewCTR(ciph, iv)
+		} else if strings.ToUpper(*mode) == "OFB" {
+			stream = cipher.NewOFB(ciph, iv)
+		} else if *crypt == "enc" && strings.ToUpper(*mode) == "CFB" {
+			stream = cipher.NewCFBEncrypter(ciph, iv)
+		} else if *crypt == "dec" && strings.ToUpper(*mode) == "CFB" {
+			stream = cipher.NewCFBDecrypter(ciph, iv)
+		}
+
+		buf := make([]byte, 128*1<<10)
+		var n int
+		for {
+			n, err = os.Stdin.Read(buf)
+			if err != nil && err != io.EOF {
+				log.Fatal(err)
+			}
+			stream.XORKeyStream(buf[:n], buf[:n])
+			if _, err := os.Stdout.Write(buf[:n]); err != nil {
+				log.Fatal(err)
+			}
+			if err == io.EOF {
+				break
+			}
+		}
+		os.Exit(0)
 	}
 
 	if *mac == "hmac" {
