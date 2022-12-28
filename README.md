@@ -28,9 +28,9 @@ Cross-platform hybrid cryptography toolkit for bulk encryption, recursive messag
 
 - **Mode of Operation:**
    - MGM: Multilinear Galois Mode (AEAD)
-   - CFB: Cipher Feedback Mode (AEAD)
-   - CTR: Counter Mode (AEAD)
-   - OFB: Output Feedback Mode (AEAD)
+   - CFB: Cipher Feedback Mode
+   - CTR: Counter Mode
+   - OFB: Output Feedback Mode
 
 - **Message Digest Algorithm:**
    - GOST R 34.11-2012 Streebog 256/512-bit 
