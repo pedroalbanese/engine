@@ -26,8 +26,11 @@ Cross-platform hybrid cryptography toolkit for bulk encryption, recursive messag
    - GOST R 34.12-2015 Magma (default)
    - GOST R 34.12-2015 Kuznechik (Grasshopper)
 
-- **AEAD Mode of Operation:**
-   - MGM: Multilinear Galois Mode
+- **Mode of Operation:**
+   - MGM: Multilinear Galois Mode (AEAD)
+   - CFB: Cipher Feedback Mode (AEAD)
+   - CTR: Counter Mode (AEAD)
+   - OFB: Output Feedback Mode (AEAD)
 
 - **Message Digest Algorithm:**
    - GOST R 34.11-2012 Streebog 256/512-bit 
@@ -80,10 +83,14 @@ Cross-platform hybrid cryptography toolkit for bulk encryption, recursive messag
        Local Port/remote's side Public IP:Port.
  -iter int
        Iterations. (for PBKDF2 command) (default 1)
+ -iv string
+       Initialization vector. (for non-AEAD symmetric encryption)
  -key string
        Private/Public key, depending on operation.
  -mac string
        Compute hash-based/cipher-based message authentication code.
+ -mode string
+       Mode of operation: MGM, CFB, CTR or OFB. (default "MGM")
  -paramset string
        Elliptic curve ParamSet: A, B, C, D. (default "A")
  -pbkdf2
