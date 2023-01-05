@@ -47,6 +47,7 @@ var (
 	cert      = flag.String("cert", "Certificate.pem", "Certificate path/name.")
 	check     = flag.String("check", "", "Check hashsum file. ('-' for STDIN)")
 	crypt     = flag.String("crypt", "", "Encrypt/Decrypt with symmetric ciphers.")
+	digest    = flag.Bool("digest", false, "File/Wildcard to generate hashsum list. ('-' for STDIN)")
 	encode    = flag.String("hex", "", "Encode binary string to hex format and vice-versa.")
 	info      = flag.String("info", "", "Associated data, additional info. (for HKDF and AEAD encryption)")
 	iport     = flag.String("ipport", "", "Local Port/remote's side Public IP:Port.")
@@ -65,7 +66,6 @@ var (
 	recursive = flag.Bool("recursive", false, "Process directories recursively. (for DIGEST command only)")
 	salt      = flag.String("salt", "", "Salt. (for PBKDF2 and HKDF commands)")
 	signature = flag.String("signature", "", "Input signature. (verification only)")
-	target    = flag.String("digest", "", "File/Wildcard to generate hashsum list. ('-' for STDIN)")
 	tcpip     = flag.String("tcp", "", "Encrypted TCP/IP Transfer Protocol. [server|ip|client]")
 	vector    = flag.String("iv", "", "Initialization vector. (for non-AEAD symmetric encryption)")
 	version   = flag.Bool("version", false, "Print version information.")
@@ -163,6 +163,21 @@ func main() {
 		os.Exit(0)
 	}
 
+	Files := strings.Join(flag.Args(), " ")
+	var inputfile io.Reader
+	var inputdesc string
+	var err error
+	if Files == "-" || Files == "" || strings.Contains(Files, "*") {
+		inputfile = os.Stdin
+		inputdesc = "stdin"
+	} else {
+		inputfile, err = os.Open(flag.Arg(0))
+		if err != nil {
+			log.Fatalf("failed opening file: %s", err)
+		}
+		inputdesc = flag.Arg(0)
+	}
+
 	if (*crypt == "enc" || *crypt == "dec") && strings.ToUpper(*mode) == "MGM" {
 		var keyHex string
 		var keyRaw []byte
@@ -195,7 +210,7 @@ func main() {
 		}
 
 		buf := bytes.NewBuffer(nil)
-		data := os.Stdin
+		data := inputfile
 		io.Copy(buf, data)
 		msg := buf.Bytes()
 		var c cipher.Block
@@ -298,7 +313,7 @@ func main() {
 		buf := make([]byte, 128*1<<10)
 		var n int
 		for {
-			n, err = os.Stdin.Read(buf)
+			n, err = inputfile.Read(buf)
 			if err != nil && err != io.EOF {
 				log.Fatal(err)
 			}
@@ -321,7 +336,7 @@ func main() {
 		} else {
 			h = hmac.New(gost34112012512.New, key)
 		}
-		if _, err := io.Copy(h, os.Stdin); err != nil {
+		if _, err := io.Copy(h, inputfile); err != nil {
 			log.Fatal(err)
 		}
 		var verify bool
@@ -337,7 +352,11 @@ func main() {
 				os.Exit(0)
 			}
 		}
-		fmt.Println(hex.EncodeToString(h.Sum(nil)))
+		if *bit {
+			fmt.Println("HMAC-Streebog512("+inputdesc+")=", hex.EncodeToString(h.Sum(nil)))
+		} else {
+			fmt.Println("HMAC-Streebog256("+inputdesc+")=", hex.EncodeToString(h.Sum(nil)))
+		}
 		os.Exit(0)
 	}
 
@@ -355,7 +374,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		io.Copy(h, os.Stdin)
+		io.Copy(h, inputfile)
 		var verify bool
 		if *signature != "" {
 			mac := hex.EncodeToString(h.Sum(nil))
@@ -369,7 +388,11 @@ func main() {
 				os.Exit(0)
 			}
 		}
-		fmt.Println(hex.EncodeToString(h.Sum(nil)))
+		if *block {
+			fmt.Println("CMAC-Kuznechik("+inputdesc+")=", hex.EncodeToString(h.Sum(nil)))
+		} else {
+			fmt.Println("CMAC-Magma("+inputdesc+")=", hex.EncodeToString(h.Sum(nil)))
+		}
 		os.Exit(0)
 	}
 
@@ -383,7 +406,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *target == "-" {
+	if *digest && (Files == "-" || Files == "") {
 		var h hash.Hash
 		if *bit == false {
 			h = gost34112012256.New()
@@ -395,65 +418,70 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *target != "" && *recursive == false {
-		files, err := filepath.Glob(*target)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		for _, match := range files {
-			var h hash.Hash
-			if *bit == false {
-				h = gost34112012256.New()
-			} else {
-				h = gost34112012512.New()
-			}
-			f, err := os.Open(match)
+	if *digest && *recursive == false {
+		for _, wildcard := range flag.Args() {
+			files, err := filepath.Glob(wildcard)
 			if err != nil {
 				log.Fatal(err)
 			}
-			file, _ := os.Stat(match)
-			if file.IsDir() {
-			} else {
-				if _, err := io.Copy(h, f); err != nil {
+			for _, match := range files {
+				var h hash.Hash
+				if *bit == false {
+					h = gost34112012256.New()
+				} else {
+					h = gost34112012512.New()
+				}
+				f, err := os.Open(match)
+				if err != nil {
 					log.Fatal(err)
 				}
-				fmt.Println(hex.EncodeToString(h.Sum(nil)), "*"+f.Name())
+				file, err := os.Stat(match)
+				if file.IsDir() {
+				} else {
+					if _, err := io.Copy(h, f); err != nil {
+						log.Fatal(err)
+					}
+					fmt.Println(hex.EncodeToString(h.Sum(nil)), "*"+f.Name())
+				}
+				f.Close()
 			}
 		}
 		os.Exit(0)
 	}
 
-	if *target != "" && *recursive == true {
-		err := filepath.Walk(filepath.Dir(*target),
+	if *digest && *recursive == true {
+		err := filepath.Walk(filepath.Dir(Files),
 			func(path string, info os.FileInfo, err error) error {
 				if err != nil {
 					return err
 				}
-				file, _ := os.Stat(path)
+				file, err := os.Stat(path)
 				if file.IsDir() {
 				} else {
-					filename := filepath.Base(path)
-					pattern := filepath.Base(*target)
-					matched, err := filepath.Match(pattern, filename)
-					if err != nil {
-						fmt.Println(err)
-					}
-					if matched {
-						var h hash.Hash
-						if *bit == false {
-							h = gost34112012256.New()
-						} else {
-							h = gost34112012512.New()
-						}
-						f, err := os.Open(path)
+					for _, match := range flag.Args() {
+						filename := filepath.Base(path)
+						pattern := filepath.Base(match)
+						matched, err := filepath.Match(pattern, filename)
 						if err != nil {
-							log.Fatal(err)
+							fmt.Println(err)
 						}
-						if _, err := io.Copy(h, f); err != nil {
-							log.Fatal(err)
+						if matched {
+							var h hash.Hash
+							if *bit == false {
+								h = gost34112012256.New()
+							} else {
+								h = gost34112012512.New()
+							}
+							f, err := os.Open(path)
+							if err != nil {
+								log.Fatal(err)
+							}
+							if _, err := io.Copy(h, f); err != nil {
+								log.Fatal(err)
+							}
+							f.Close()
+							fmt.Println(hex.EncodeToString(h.Sum(nil)), "*"+f.Name())
 						}
-						fmt.Println(hex.EncodeToString(h.Sum(nil)), "*"+f.Name())
 					}
 				}
 				return nil
@@ -461,7 +489,6 @@ func main() {
 		if err != nil {
 			log.Println(err)
 		}
-		os.Exit(0)
 	}
 
 	if *check != "" {
@@ -550,7 +577,6 @@ func main() {
 		}
 	}
 
-	var err error
 	if *pkey == "keygen" {
 		var gost341012PrivRaw []byte
 		var curve *gost3410.Curve
@@ -701,7 +727,7 @@ func main() {
 		} else {
 			h = gost34112012256.New()
 		}
-		if _, err := io.Copy(h, os.Stdin); err != nil {
+		if _, err := io.Copy(h, inputfile); err != nil {
 			log.Fatal(err)
 		}
 		file, err := os.Open(*key)
@@ -739,7 +765,11 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println("(stdin)=", hex.EncodeToString(signature))
+		if *bit {
+			fmt.Println("GOST2012-Streebog512("+inputdesc+")=", hex.EncodeToString(signature))
+		} else {
+			fmt.Println("GOST2012-Streebog256("+inputdesc+")=", hex.EncodeToString(signature))
+		}
 		os.Exit(0)
 	}
 
@@ -750,7 +780,7 @@ func main() {
 		} else {
 			h = gost34112012256.New()
 		}
-		if _, err := io.Copy(h, os.Stdin); err != nil {
+		if _, err := io.Copy(h, inputfile); err != nil {
 			log.Fatal(err)
 		}
 		file, err := os.Open(*key)
@@ -961,8 +991,6 @@ func main() {
 		buf2.WriteString(fmt.Sprintf("%8sSerial Number : %x\n", "", certa.SerialNumber))
 		buf2.WriteString(fmt.Sprintf("%8sCommonName    : %s \n", "", certa.Issuer.CommonName))
 		buf2.WriteString(fmt.Sprintf("%8sEmailAddresses: %s \n", "", certa.EmailAddresses))
-		buf2.WriteString(fmt.Sprintf("%8sIP Address    : %s \n", "", certa.IPAddresses))
-		buf2.WriteString(fmt.Sprintf("%8sDNSNames      : %s \n", "", certa.DNSNames))
 		buf2.WriteString(fmt.Sprintf("%8sIsCA          : %v \n", "", certa.IsCA))
 
 		buf2.WriteString(fmt.Sprintf("%8sIssuer\n            ", ""))
@@ -1042,9 +1070,6 @@ func main() {
 			log.Fatalf("Failed to generate serial number: %v", err)
 		}
 
-		consensus := externalip.DefaultConsensus(nil, nil)
-		ip, _ := consensus.ExternalIP()
-
 		scanner := bufio.NewScanner(os.Stdin)
 
 		fmt.Print("CommonName: ")
@@ -1123,9 +1148,11 @@ func main() {
 			IsCA:                  true,
 			AuthorityKeyId:        authority,
 
-			PermittedDNSDomainsCritical: true,
-			DNSNames:                    []string{ip.String()},
-			IPAddresses:                 []net.IP{net.IPv4(127, 0, 0, 1).To4(), net.ParseIP("2001:4860:0:2001::68")},
+			/*
+				PermittedDNSDomainsCritical: true,
+				DNSNames:                    []string{ip.String()},
+				IPAddresses:                 []net.IP{net.IPv4(127, 0, 0, 1).To4(), net.ParseIP("2001:4860:0:2001::68")},
+			*/
 		}
 
 		template.IsCA = true
