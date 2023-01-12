@@ -38,6 +38,7 @@ import (
 	"github.com/pedroalbanese/gogost/gost3412128"
 	"github.com/pedroalbanese/gogost/gost341264"
 	"github.com/pedroalbanese/gogost/mgm"
+	"github.com/pedroalbanese/gopass"
 	"github.com/pedroalbanese/randomart"
 )
 
@@ -113,8 +114,23 @@ func main() {
 		os.Exit(0)
 	}
 
+	Files := strings.Join(flag.Args(), " ")
+	var inputfile io.Reader
+	var inputdesc string
+	var err error
+	if Files == "-" || Files == "" || strings.Contains(Files, "*") {
+		inputfile = os.Stdin
+		inputdesc = "stdin"
+	} else {
+		inputfile, err = os.Open(flag.Arg(0))
+		if err != nil {
+			log.Fatalf("failed opening file: %s", err)
+		}
+		inputdesc = flag.Arg(0)
+	}
+
 	if *encode == "enc" || *encode == "encode" {
-		b, err := ioutil.ReadAll(os.Stdin)
+		b, err := ioutil.ReadAll(inputfile)
 		if len(b) == 0 {
 			os.Exit(0)
 		}
@@ -130,7 +146,7 @@ func main() {
 	if *encode == "dec" || *encode == "decode" {
 		var err error
 		buf := bytes.NewBuffer(nil)
-		data := os.Stdin
+		data := inputfile
 		io.Copy(buf, data)
 		b := strings.TrimSuffix(string(buf.Bytes()), "\r\n")
 		b = strings.TrimSuffix(string(b), "\n")
@@ -154,28 +170,11 @@ func main() {
 
 	if *encode == "dump" {
 		buf := bytes.NewBuffer(nil)
-		data := os.Stdin
+		data := inputfile
 		io.Copy(buf, data)
-		b := strings.TrimSuffix(string(buf.Bytes()), "\r\n")
-		b = strings.TrimSuffix(string(b), "\n")
-		dump := hex.Dump([]byte(b))
+		dump := hex.Dump(buf.Bytes())
 		os.Stdout.Write([]byte(dump))
 		os.Exit(0)
-	}
-
-	Files := strings.Join(flag.Args(), " ")
-	var inputfile io.Reader
-	var inputdesc string
-	var err error
-	if Files == "-" || Files == "" || strings.Contains(Files, "*") {
-		inputfile = os.Stdin
-		inputdesc = "stdin"
-	} else {
-		inputfile, err = os.Open(flag.Arg(0))
-		if err != nil {
-			log.Fatalf("failed opening file: %s", err)
-		}
-		inputdesc = flag.Arg(0)
 	}
 
 	if (*crypt == "enc" || *crypt == "dec") && strings.ToUpper(*mode) == "MGM" {
@@ -553,14 +552,14 @@ func main() {
 		*pwd = scanner.Text()
 	}
 
-	if (*pkey == "certgen" || *pkey == "keygen" || *pkey == "text" || *pkey == "modulus" || *tcpip == "server" || *tcpip == "client" || *pkey == "derive") && *key != "" && *pwd == "" {
+	if (*pkey == "sign" || *pkey == "decrypt" || *pkey == "derive" || *pkey == "certgen" || *pkey == "text" || *pkey == "modulus" || *tcpip == "server" || *tcpip == "client") && *key != "" && *pwd == "" {
 		file, err := os.Open(*key)
 		if err != nil {
-			log.Println(err)
+			log.Fatal(err)
 		}
 		info, err := file.Stat()
 		if err != nil {
-			log.Println(err)
+			log.Fatal(err)
 		}
 		buf := make([]byte, info.Size())
 		file.Read(buf)
@@ -570,10 +569,9 @@ func main() {
 			errors.New("no valid private key found")
 		}
 		if IsEncryptedPEMBlock(block) {
-			scanner := bufio.NewScanner(os.Stdin)
 			print("Password: ")
-			scanner.Scan()
-			*pwd = scanner.Text()
+			pass, _ := gopass.GetPasswd()
+			*pwd = string(pass)
 		}
 	}
 
