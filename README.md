@@ -70,7 +70,7 @@ Cross-platform hybrid cryptography toolkit for bulk encryption, recursive messag
        Check hashsum file. ('-' for STDIN)
  -crypt string
        Encrypt/Decrypt with symmetric ciphers.
- -digest string
+ -digest
        File/Wildcard to generate hashsum list. ('-' for STDIN)
  -hex string
        Encode binary string to hex format and vice-versa.
@@ -167,8 +167,8 @@ echo $?
 ```
 #### Streebog256/512 hashsum:
 ```sh
-./engine -digest - [-512] < file.ext
-./engine -digest *.* [-512]
+./engine -digest [-512] < file.ext
+./engine -digest [-512] *.*
 ```
 #### HMAC-Streebog256/512:
 ```sh
