@@ -1,5 +1,3 @@
-github.com/pedroalbanese/anubis v0.0.0-gama h1:06CnGLlF4N7JU8POmN9DntPs6t2e64lo5PmbOdLtrq8=
-github.com/pedroalbanese/anubis v0.0.0-gama/go.mod h1:MMJog7ga594ydzm17Qzj8wIynFJmrp/gFzZIjdX/2fQ=
 github.com/pedroalbanese/cmac v0.0.0-20210429130952-a58975ec8f4c h1:mX7NRMOVOwh5IVth4a/wsF5ZSO8uAZ6/NNepa07u9jg=
 github.com/pedroalbanese/cmac v0.0.0-20210429130952-a58975ec8f4c/go.mod h1:5AAl1CY49A0PRTLlbGIOkmWLRyDY3c9WfBjdOWDGWww=
 github.com/pedroalbanese/go-external-ip v0.0.0-20200601212049-c872357d968e h1:VUR1tH5e1MXJgiJNq+8kh8ztihi5/wrkuIEG4bmYpBU=
@@ -17,9 +15,7 @@ golang.org/x/crypto v0.0.0-20220924013350-4ba4fb4dd9e7 h1:WJywXQVIb56P2kAvXeMGTI
 golang.org/x/crypto v0.0.0-20220924013350-4ba4fb4dd9e7/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
 golang.org/x/net v0.0.0-20210226172049-e18ecbb05110/go.mod h1:m0MpNAwzfU5UDzcl9v0D8zg8gWTRqZa9RBIspLL5mdg=
 golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
-golang.org/x/sys v0.0.0-20201119102817-f84b799fce68/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210423082822-04245dca01da/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
-golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1 h1:SrN+KX8Art/Sf4HNj6Zcz06G7VEz+7w9tdXTPOZ7+l4=
 golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.4.0 h1:Zr2JFtRQNX3BCZ8YtxRE9hNJYC8J6I1MVbMg6owUp18=
 golang.org/x/sys v0.4.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
