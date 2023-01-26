@@ -7,7 +7,7 @@
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/pedroalbanese/engine)](https://github.com/pedroalbanese/engine/releases)
 
 ### GOST Toolkit Lite (TC26 Compliant)
-Cross-platform hybrid cryptography toolkit for bulk encryption, recursive message digest, key derivation function (KDF), message authentication code (MAC), shared key agreement (VKO), digital signature and TLS 1.2 for small or embedded systems. 
+Cross-platform hybrid cryptography tool for symmetric encryption, cipher-based message authentication code (CMAC), recursive hash digest, hash-based message authentication code (HMAC), HMAC-based key derivation function (HKDF), password based key derivation function (PBKDF2), shared key agreement (ECDH), digital signature (RSA/ECDSA/EdDSA) and TLS 1.2 for small or embedded systems. 
 
 **GOST refers to a set of technical standards maintained by the Euro-Asian Council for Standardization, Metrology and Certification (EASC), a regional standards organization operating under the auspices of the Commonwealth of Independent States (CIS).**
 
