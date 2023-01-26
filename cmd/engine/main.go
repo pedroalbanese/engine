@@ -72,7 +72,7 @@ var (
 	version   = flag.Bool("version", false, "Print version information.")
 )
 
-const Version = "1.0.1-Alpha"
+const Version = "1.0.2"
 
 var (
 	oidEmailAddress                 = []int{1, 2, 840, 113549, 1, 9, 1}
@@ -1021,6 +1021,15 @@ func main() {
 
 		printSignature(certa.SignatureAlgorithm, certa.Signature, &buf2)
 		fmt.Print(buf2.String())
+
+		ok := time.Now().Before(certa.NotAfter)
+		fmt.Println("IsValid:", ok)
+
+		if ok {
+			os.Exit(0)
+		} else {
+			os.Exit(1)
+		}
 	}
 
 	if *pkey == "certgen" {
